@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>لوحة المسجلين</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Cairo',sans-serif;background:#f1f6fa;color:#13293d;padding:14px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{font-size:22px;color:#0b3d6b;margin-bottom:12px}
+  .box{background:#fff;border-radius:16px;padding:18px;box-shadow:0 4px 16px rgba(11,61,107,.08);margin-bottom:14px}
+  input{width:100%;font-family:inherit;font-size:16px;padding:11px 13px;border:1.5px solid #cfdbe6;border-radius:10px;margin-bottom:10px}
+  button{font-family:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:700;background:#1479c9;color:#fff}
+  button.gray{background:#e3ebf2;color:#13293d} button.red{background:#d90429} button.green{background:#12a150}
+  .top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .top input{flex:1;min-width:160px;margin:0}
+  .stats{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .stat{flex:1;min-width:90px;background:#fff;border-radius:14px;padding:10px;text-align:center;box-shadow:0 2px 8px rgba(11,61,107,.07)}
+  .stat b{display:block;font-size:24px;color:#0b3d6b}
+  .row{display:flex;gap:12px;align-items:flex-start;background:#fff;border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(11,61,107,.07);border-right:5px solid #f0a500}
+  .row.ok{border-right-color:#12a150}
+  .row img{width:74px;height:100px;object-fit:cover;border-radius:10px;cursor:pointer;flex-shrink:0;background:#eee}
+  .info{flex:1;min-width:0}
+  .info h3{font-size:17px}
+  .info div{font-size:14px;color:#5b6f82;direction:rtl}
+  .ph{direction:ltr;display:inline-block}
+  .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .acts button{padding:6px 12px;font-size:13px}
+  #modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10;align-items:center;justify-content:center;padding:14px}
+  #modal img{max-width:100%;max-height:100%;border-radius:10px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🌊 لوحة مسجلين رحلة الإسكندرية</h1>
+
+  <div class="box" id="loginBox">
+    <input type="password" id="pass" placeholder="كلمة السر" style="direction:ltr" autocomplete="current-password">
+    <button id="loginBtn">دخول</button>
+    <div id="loginErr" style="color:#d90429;margin-top:8px"></div>
+  </div>
+
+  <div id="panel" class="hide">
+    <div class="stats">
+      <div class="stat"><b id="sAll">0</b>إجمالي المسجلين</div>
+      <div class="stat"><b id="sOk">0</b>تم التأكيد</div>
+      <div class="stat"><b id="sPend">0</b>في الانتظار</div>
+      <div class="stat"><b id="sMoney">0</b>إجمالي (جنيه)</div>
+      <div class="stat"><b id="sSeats">-</b>المقاعد (محجوز / الحد)</div>
+    </div>
+    <div class="top">
+      <input id="q" placeholder="بحث بالاسم أو رقم التليفون...">
+      <button id="limitBtn" class="gray">ضبط الحد</button>
+      <button id="csvBtn" class="green">تصدير Excel</button>
+      <button id="outBtn" class="gray">خروج</button>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<div id="modal"><img id="big" alt=""></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  // ====== نفس إعدادات Firebase اللي في index.html ======
+  const firebaseConfig = {
+    apiKey: "AIzaSyDbpRDwimsvkCQ7wOqSdjtUzYbaOpR4R2o",
+    authDomain: "alex-c7727.firebaseapp.com",
+    projectId: "alex-c7727",
+    storageBucket: "alex-c7727.firebasestorage.app",
+    messagingSenderId: "607131907952",
+    appId: "1:607131907952:web:e3c7fed5ce567754dbc1b5",
+    measurementId: "G-FBTCGPWFJL"
+  };
+  const TRIP_PRICE = 350;
+  // إيميل الأدمن الثابت (مجرد معرّف داخلي، مش لازم يكون إيميل حقيقي). لازم يكون نفسه في firestore.rules
+  const ADMIN_EMAIL = "admin@alex-trip.com";
+  // =====================================================
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth(), db = firebase.firestore();
+  const $ = id => document.getElementById(id);
+  let data = [], unsub = null, unsubC = null, counter = null;
+  const counterRef = db.collection('meta').doc('counter');
+
+  $('pass').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
+  $('loginBtn').onclick = async () => {
+    $('loginErr').textContent = '';
+    try { await auth.signInWithEmailAndPassword(ADMIN_EMAIL, $('pass').value); }
+    catch(e){ $('loginErr').textContent = 'بيانات الدخول غير صحيحة'; }
+  };
+  $('outBtn').onclick = () => auth.signOut();
+
+  auth.onAuthStateChanged(user => {
+    $('loginBox').classList.toggle('hide', !!user);
+    $('panel').classList.toggle('hide', !user);
+    if (unsub) { unsub(); unsub = null; }
+    if (unsubC) { unsubC(); unsubC = null; }
+    if (user) {
+      unsubC = counterRef.onSnapshot(s => { counter = s.exists ? s.data() : null; render(); });
+      unsub = db.collection('trip_registrations').orderBy('createdAt','desc').onSnapshot(s => {
+        data = s.docs.map(d => ({id:d.id, ...d.data()}));
+        render();
+      }, err => { alert('مفيش صلاحية لعرض البيانات. تأكد من إيميل الأدمن في القواعد.'); });
+    }
+  });
+
+  $('q').oninput = render;
+  function render(){
+    const q = $('q').value.trim();
+    const rows = data.filter(r => !q || (r.name||'').includes(q) || (r.phone1||'').includes(q) || (r.phone2||'').includes(q) || (r.payFrom||'').includes(q));
+    const ok = data.filter(r => r.confirmed).length;
+    $('sAll').textContent = data.length; $('sOk').textContent = ok;
+    $('sPend').textContent = data.length - ok; $('sMoney').textContent = ok * TRIP_PRICE;
+    $('sSeats').textContent = counter ? `${counter.count} / ${counter.limit}` : 'اضغط ضبط الحد';
+    $('list').innerHTML = rows.map(r => `
+      <div class="row ${r.confirmed?'ok':''}">
+        <img src="${r.screenshot||''}" data-id="${r.id}" class="shot" alt="سكرين">
+        <div class="info">
+          <h3>${esc(r.name)}</h3>
+          <div>📞 <span class="ph">${esc(r.phone1)}</span> &nbsp; 📞 <span class="ph">${esc(r.phone2)}</span></div>
+          <div>💳 حوّل من: <span class="ph">${esc(r.payFrom||'-')}</span></div>
+          <div>🕒 ${r.createdAt ? r.createdAt.toDate().toLocaleString('ar-EG') : ''}</div>
+          <div class="acts">
+            <button class="${r.confirmed?'gray':'green'}" data-ok="${r.id}">${r.confirmed?'إلغاء التأكيد':'تأكيد الدفع ✓'}</button>
+            <a href="https://wa.me/2${esc(r.phone1)}?text=${encodeURIComponent('أهلاً ' + (r.name||'') + '، معاك فريق رحلة الإسكندرية 🌊 استلمنا تسجيلك وبنراجع التحويل.')}" target="_blank" rel="noopener"><button class="green" type="button">واتساب 💬</button></a>
+            <button class="red" data-del="${r.id}">حذف</button>
+          </div>
+        </div>
+      </div>`).join('') || '<div class="box">مفيش نتائج</div>';
+  }
+  const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  $('list').onclick = async e => {
+    const t = e.target;
+    if (t.classList.contains('shot')) { $('big').src = t.src; $('modal').style.display = 'flex'; }
+    if (t.dataset.ok) { const r = data.find(x=>x.id===t.dataset.ok); await db.collection('trip_registrations').doc(r.id).update({confirmed: !r.confirmed}); }
+    if (t.dataset.del && confirm('متأكد من الحذف؟ هيتحرر مقعده.')) {
+      const b = db.batch();
+      b.delete(db.collection('trip_registrations').doc(t.dataset.del));
+      if (counter) b.update(counterRef, {count: firebase.firestore.FieldValue.increment(-1)});
+      await b.commit();
+    }
+  };
+
+  // ضبط الحد الأقصى (وإعادة مزامنة العداد مع عدد المسجلين الفعلي)
+  $('limitBtn').onclick = async () => {
+    const v = prompt('الحد الأقصى لعدد المسجلين:', counter ? counter.limit : 51);
+    const n = parseInt(v, 10);
+    if (!n || n < 1) return;
+    await counterRef.set({limit: n, count: data.length}, {merge: true});
+  };
+  $('modal').onclick = () => $('modal').style.display = 'none';
+
+  $('csvBtn').onclick = () => {
+    const head = ['الاسم','تليفون 1','تليفون 2','حوّل من','تم التأكيد','وقت التسجيل'];
+    const lines = data.map(r => [r.name, r.phone1, r.phone2, r.payFrom||'', r.confirmed?'نعم':'لا', r.createdAt?r.createdAt.toDate().toLocaleString('ar-EG'):'']
+      .map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+    const blob = new Blob(['\ufeff' + [head.join(','), ...lines].join('\n')], {type:'text/csv;charset=utf-8'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'alex-trip.csv'; a.click();
+  };
+</script>
+</body>
+</html>
