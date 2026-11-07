@@ -13,6 +13,26 @@ service cloud.firestore {
       return 'seats' in d ? d.seats : 1;
     }
 
+    // بيانات راكب واحد (الكرسي 2 وما بعده): اسم + تليفون
+    function paxOk(l, i) {
+      return l.size() <= i || (
+        l[i] is map
+        && l[i].keys().hasOnly(['name', 'phone'])
+        && l[i].name is string && l[i].name.size() >= 5 && l[i].name.size() <= 100
+        && l[i].phone is string && l[i].phone.matches('^01[0125][0-9]{8}$')
+      );
+    }
+
+    // الركاب الإضافيين: مفيش لو كرسي واحد، وعددهم = الكراسي - 1 لو أكتر
+    function paxValid(d) {
+      return !('passengers' in d)
+        ? seatsOf(d) == 1
+        : (d.passengers is list
+            && d.passengers.size() == seatsOf(d) - 1
+            && paxOk(d.passengers, 0) && paxOk(d.passengers, 1)
+            && paxOk(d.passengers, 2) && paxOk(d.passengers, 3));
+    }
+
     // الحد الأقصى للكراسي في الحجز الواحد (لازم يطابق MAX_SEATS_PER_BOOKING في index.html)
     function maxSeats() {
       return 5;
@@ -77,7 +97,8 @@ service cloud.firestore {
           'confirmed',
           'createdAt',
           'seats',
-          'totalPrice'
+          'totalPrice',
+          'passengers'
         ])
 
         // الرقم الأول يساوي ID
@@ -107,6 +128,9 @@ service cloud.firestore {
         && seatsOf(request.resource.data) is int
         && seatsOf(request.resource.data) >= 1
         && seatsOf(request.resource.data) <= maxSeats()
+
+        // بيانات الركاب
+        && paxValid(request.resource.data)
 
         // السعر الإجمالي (لو مبعوت) لازم يساوي عدد الكراسي × 350
         && (

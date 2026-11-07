@@ -114,7 +114,7 @@
   $('q').oninput = render;
   function render(){
     const q = $('q').value.trim();
-    const rows = data.filter(r => !q || (r.name||'').includes(q) || (r.phone1||'').includes(q) || (r.phone2||'').includes(q) || (r.payFrom||'').includes(q));
+    const rows = data.filter(r => !q || (r.name||'').includes(q) || (r.phone1||'').includes(q) || (r.phone2||'').includes(q) || (r.payFrom||'').includes(q) || (r.passengers||[]).some(p => (p.name||'').includes(q) || (p.phone||'').includes(q)));
     const ok = data.filter(r => r.confirmed).length;
     const seatsOf = r => Math.max(1, parseInt(r.seats, 10) || 1);
     const totalSeats = data.reduce((a, r) => a + seatsOf(r), 0);
@@ -129,6 +129,7 @@
           <h3>${esc(r.name)} <span style="font-size:13px;background:#e8f4fd;color:#0b3d6b;border-radius:20px;padding:2px 10px;font-weight:700">🎟️ ${seatsOf(r)} ${seatsOf(r)===1?'كرسي':'كراسي'}</span></h3>
           <div>📞 <span class="ph">${esc(r.phone1)}</span> &nbsp; 📞 <span class="ph">${esc(r.phone2)}</span></div>
           <div>💳 حوّل من: <span class="ph">${esc(r.payFrom||'-')}</span></div>
+          ${(r.passengers||[]).map((p,i) => `<div>🎟️ كرسي ${i+2}: <b>${esc(p.name)}</b> — <span class="ph">${esc(p.phone)}</span></div>`).join('')}
           <div>🕒 ${r.createdAt ? r.createdAt.toDate().toLocaleString('ar-EG') : ''}</div>
           <div class="acts">
             <button class="${r.confirmed?'gray':'green'}" data-ok="${r.id}">${r.confirmed?'إلغاء التأكيد':'تأكيد الدفع ✓'}</button>
@@ -163,8 +164,8 @@
   $('modal').onclick = () => $('modal').style.display = 'none';
 
   $('csvBtn').onclick = () => {
-    const head = ['الاسم','عدد الكراسي','تليفون 1','تليفون 2','حوّل من','تم التأكيد','وقت التسجيل'];
-    const lines = data.map(r => [r.name, Math.max(1, parseInt(r.seats, 10) || 1), r.phone1, r.phone2, r.payFrom||'', r.confirmed?'نعم':'لا', r.createdAt?r.createdAt.toDate().toLocaleString('ar-EG'):'']
+    const head = ['الاسم','عدد الكراسي','باقي الركاب','تليفون 1','تليفون 2','حوّل من','تم التأكيد','وقت التسجيل'];
+    const lines = data.map(r => [r.name, Math.max(1, parseInt(r.seats, 10) || 1), (r.passengers||[]).map(p => p.name + ' (' + p.phone + ')').join(' | '), r.phone1, r.phone2, r.payFrom||'', r.confirmed?'نعم':'لا', r.createdAt?r.createdAt.toDate().toLocaleString('ar-EG'):'']
       .map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
     const blob = new Blob(['\ufeff' + [head.join(','), ...lines].join('\n')], {type:'text/csv;charset=utf-8'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'alex-trip.csv'; a.click();

@@ -115,6 +115,10 @@
   .seat-total b{color:var(--red);font-size:19px}
   .seat-note{font-size:13px;color:var(--muted);margin-top:6px}
   .bump{animation:pop .3s var(--ease)}
+  .pax{background:#fbfdff;border:1.5px solid #dbe7f1;border-radius:16px;padding:6px 14px 14px;margin-top:12px;animation:pop .4s var(--ease)}
+  .pax h3{font-size:16px;color:var(--navy);margin-top:10px;font-weight:800}
+  .pax label{margin:10px 0 5px;font-size:14.5px}
+  .pax-head{margin-top:20px;font-weight:700;color:var(--navy)}
 
   /* ===== Success ===== */
   .success{display:none;text-align:center;animation:pop .7s var(--ease)}
@@ -213,7 +217,7 @@
       <div class="seat-total" id="seatTotal">عدد الكراسي: <b>1</b> × 350 = <b>350</b> جنيه</div>
       <div class="err" id="e-seats"></div>
 
-      <label for="name">الاسم بالكامل (صاحب الحجز)</label>
+      <label for="name">الاسم بالكامل (صاحب الحجز – كرسي 1)</label>
       <input type="text" id="name" autocomplete="name" placeholder="مثال: محمد أحمد علي">
       <div class="err" id="e-name"></div>
 
@@ -225,6 +229,8 @@
       <label for="phone2">رقم تليفون تاني (2)</label>
       <input type="tel" id="phone2" inputmode="numeric" maxlength="11" placeholder="01XXXXXXXXX">
       <div class="err" id="e-phone2"></div>
+
+      <div id="paxBox"></div>
 
       <label>سكرين الدفع</label>
       <label class="file" id="fileBox" for="shot">
@@ -291,8 +297,35 @@
     $('seatTotal').innerHTML = 'عدد الكراسي: <b>' + seats + '</b> × ' + TRIP_PRICE + ' = <b>' + total + '</b> جنيه';
     $('payTotal').textContent = total + ' جنيه';
     $('payNote').textContent = seats > 1 ? '(' + seats + ' كراسي)' : '';
+    renderPax();
     $('seatTotal').classList.remove('bump'); void $('seatTotal').offsetWidth; $('seatTotal').classList.add('bump');
   }
+  // بيانات باقي الركاب (الكرسي 2 وما بعده)
+  let pax = [];
+  function renderPax(){
+    const n = seats - 1;
+    while (pax.length < n) pax.push({name:'', phone:''});
+    pax.length = n;
+    const box = $('paxBox');
+    box.innerHTML = n > 0 ? '<div class="pax-head">🧑‍🤝‍🧑 بيانات باقي الركاب</div>' : '';
+    pax.forEach((p, i) => {
+      const d = document.createElement('div');
+      d.className = 'pax';
+      d.innerHTML = '<h3>🎟️ الكرسي ' + (i + 2) + '</h3>' +
+        '<label for="pn' + i + '">الاسم بالكامل</label>' +
+        '<input type="text" id="pn' + i + '" data-i="' + i + '" data-f="name" autocomplete="off" placeholder="اسم صاحب الكرسي">' +
+        '<label for="pp' + i + '">رقم التليفون</label>' +
+        '<input type="tel" id="pp' + i + '" data-i="' + i + '" data-f="phone" inputmode="numeric" maxlength="11" placeholder="01XXXXXXXXX">' +
+        '<div class="err pax-err" id="e-pax' + i + '"></div>';
+      box.appendChild(d);
+      d.querySelector('[data-f=name]').value = p.name;
+      d.querySelector('[data-f=phone]').value = p.phone;
+    });
+  }
+  $('paxBox').addEventListener('input', e => {
+    const t = e.target;
+    if (t.dataset && t.dataset.i !== undefined) pax[+t.dataset.i][t.dataset.f] = t.value;
+  });
   $('maxSeatsTxt').textContent = MAX_SEATS_PER_BOOKING;
   $('seatPlus').onclick = () => { if (seats < MAX_SEATS_PER_BOOKING) { seats++; renderSeats(); } };
   $('seatMinus').onclick = () => { if (seats > 1) { seats--; renderSeats(); } };
@@ -361,6 +394,14 @@
     else if (p1 === p2) fail('phone2','لازم يكون رقم مختلف عن الأول');
     if (!phoneRe.test(pf)) fail('payfrom','اكتب الرقم اللي حوّلت منه');
     if (!shotData) fail('shot','ارفع سكرين الدفع');
+    document.querySelectorAll('.pax-err').forEach(x => x.textContent = '');
+    const cleanPax = [];
+    for (let i = 0; i < nSeats - 1; i++) {
+      const pn = (pax[i].name || '').trim().replace(/\s+/g,' '), pp = toEn(pax[i].phone || '');
+      if (pn.split(' ').length < 2 || pn.length < 5) { $('e-pax'+i).textContent = 'اكتب اسم صاحب الكرسي ' + (i+2) + ' بالكامل (اسمين على الأقل)'; bad = true; }
+      else if (!phoneRe.test(pp)) { $('e-pax'+i).textContent = 'رقم تليفون غير صحيح (لازم 11 رقم ويبدأ بـ 01)'; bad = true; }
+      cleanPax.push({name: pn, phone: pp});
+    }
     if (bad) return;
 
     if (!configured) { $('e-form').textContent = 'الموقع لسه متضبطش (إعدادات Firebase ناقصة).'; return; }
@@ -372,6 +413,7 @@
       batch.set(db.collection('trip_registrations').doc(p1), {
         name, phone1: p1, phone2: p2, payFrom: pf, screenshot: shotData,
         seats: nSeats, totalPrice: nSeats * TRIP_PRICE,
+        ...(nSeats > 1 ? { passengers: cleanPax } : {}),
         confirmed: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
