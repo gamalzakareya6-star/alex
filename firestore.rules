@@ -82,7 +82,8 @@ service cloud.firestore {
     // =========================
     match /trip_registrations/{id} {
 
-      allow create: if
+      // الأدمن يقدر يضيف شخص يدويًا (من لوحة الأدمن)، والزائر بالشروط دي:
+      allow create: if isAdmin() || (
 
         // رقم الهاتف هو Document ID
         id.matches('^01[0125][0-9]{8}$')
@@ -157,7 +158,8 @@ service cloud.firestore {
         // التأكد أن الرقم المسجل هو نفسه
         && getAfter(
           /databases/$(database)/documents/meta/counter
-        ).data.lastPhone == id;
+        ).data.lastPhone == id
+      );
 
 
       // الأدمن فقط يستطيع رؤية أو تعديل البيانات

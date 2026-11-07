@@ -32,6 +32,17 @@
   #modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10;align-items:center;justify-content:center;padding:14px}
   #modal img{max-width:100%;max-height:100%;border-radius:10px}
   .hide{display:none}
+  textarea{width:100%;font-family:inherit;font-size:14.5px;padding:8px 11px;border:1.5px solid #cfdbe6;border-radius:10px;margin-top:8px;min-height:44px;resize:vertical;background:#fffdf5}
+  textarea:focus{outline:none;border-color:#1479c9}
+  .noshot{width:74px;height:100px;border-radius:10px;background:#eef3f7;color:#7d8fa0;font-size:12px;display:flex;align-items:center;justify-content:center;text-align:center;flex-shrink:0;padding:4px}
+  .tag{font-size:12px;border-radius:20px;padding:2px 10px;font-weight:700;margin-right:4px}
+  .tag.manual{background:#fff3d6;color:#8a5a00}
+  .saved{font-size:12px;color:#12a150;margin-right:6px}
+  #addModal{display:none;position:fixed;inset:0;background:rgba(10,30,50,.6);z-index:11;align-items:flex-start;justify-content:center;padding:14px;overflow:auto}
+  #addModal .box{max-width:480px;width:100%;margin:20px auto}
+  #addModal label{display:block;font-weight:700;margin:8px 0 4px;font-size:14px}
+  .apax{background:#f6fafd;border:1px solid #dbe7f1;border-radius:12px;padding:8px 10px;margin-top:8px}
+  .apax b{font-size:13px;color:#0b3d6b}
 </style>
 </head>
 <body>
@@ -54,6 +65,7 @@
     </div>
     <div class="top">
       <input id="q" placeholder="بحث بالاسم أو رقم التليفون...">
+      <button id="addBtn">➕ إضافة شخص</button>
       <button id="limitBtn" class="gray">ضبط الحد</button>
       <button id="csvBtn" class="green">تصدير Excel</button>
       <button id="outBtn" class="gray">خروج</button>
@@ -63,6 +75,27 @@
 </div>
 
 <div id="modal"><img id="big" alt=""></div>
+
+<div id="addModal">
+  <div class="box">
+    <h2 style="font-size:19px;color:#0b3d6b;margin-bottom:6px">➕ إضافة شخص يدويًا</h2>
+    <label for="a_name">الاسم</label>
+    <input id="a_name" autocomplete="off" placeholder="اسم صاحب الحجز">
+    <label for="a_phone">رقم التليفون (اختياري)</label>
+    <input id="a_phone" type="tel" inputmode="numeric" maxlength="11" style="direction:ltr;text-align:right" placeholder="01XXXXXXXXX">
+    <label for="a_seats">عدد الكراسي</label>
+    <input id="a_seats" type="number" min="1" max="20" value="1">
+    <div id="a_pax"></div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="a_ok" checked style="width:auto;margin:0"> تم الدفع (تأكيد الحجز)</label>
+    <label for="a_notes">ملاحظات</label>
+    <textarea id="a_notes" placeholder="مثلًا: دفع كاش، صديق فلان..."></textarea>
+    <div id="a_err" style="color:#d90429;margin-top:8px;min-height:18px;font-size:14px"></div>
+    <div class="acts" style="margin-top:6px">
+      <button id="a_save" class="green">حفظ</button>
+      <button id="a_cancel" class="gray" type="button">إلغاء</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -86,7 +119,7 @@
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth(), db = firebase.firestore();
   const $ = id => document.getElementById(id);
-  let data = [], unsub = null, unsubC = null, counter = null;
+  let data = [], unsub = null, unsubC = null, counter = null, pendingList = false;
   const counterRef = db.collection('meta').doc('counter');
 
   $('pass').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
@@ -114,7 +147,7 @@
   $('q').oninput = render;
   function render(){
     const q = $('q').value.trim();
-    const rows = data.filter(r => !q || (r.name||'').includes(q) || (r.phone1||'').includes(q) || (r.phone2||'').includes(q) || (r.payFrom||'').includes(q) || (r.passengers||[]).some(p => (p.name||'').includes(q) || (p.phone||'').includes(q)));
+    const rows = data.filter(r => !q || (r.notes||'').includes(q) || (r.name||'').includes(q) || (r.phone1||'').includes(q) || (r.phone2||'').includes(q) || (r.payFrom||'').includes(q) || (r.passengers||[]).some(p => (p.name||'').includes(q) || (p.phone||'').includes(q)));
     const ok = data.filter(r => r.confirmed).length;
     const seatsOf = r => Math.max(1, parseInt(r.seats, 10) || 1);
     const totalSeats = data.reduce((a, r) => a + seatsOf(r), 0);
@@ -122,18 +155,23 @@
     $('sAll').textContent = data.length + ' (' + totalSeats + ' كرسي)'; $('sOk').textContent = ok;
     $('sPend').textContent = data.length - ok; $('sMoney').textContent = okSeats * TRIP_PRICE;
     $('sSeats').textContent = counter ? `${counter.count} / ${counter.limit}` : 'اضغط ضبط الحد';
+    // لو الأدمن بيكتب ملاحظة، ما نعيدش رسم القائمة عشان ما يضيعش اللي بيكتبه
+    const ae = document.activeElement;
+    if (ae && ae.classList && ae.classList.contains('note-ta')) { pendingList = true; return; }
+    pendingList = false;
     $('list').innerHTML = rows.map(r => `
       <div class="row ${r.confirmed?'ok':''}">
-        <img src="${r.screenshot||''}" data-id="${r.id}" class="shot" alt="سكرين">
+        ${r.screenshot ? `<img src="${r.screenshot}" data-id="${r.id}" class="shot" alt="سكرين">` : '<div class="noshot">بدون سكرين</div>'}
         <div class="info">
-          <h3>${esc(r.name)} <span style="font-size:13px;background:#e8f4fd;color:#0b3d6b;border-radius:20px;padding:2px 10px;font-weight:700">🎟️ ${seatsOf(r)} ${seatsOf(r)===1?'كرسي':'كراسي'}</span></h3>
-          <div>📞 <span class="ph">${esc(r.phone1)}</span> &nbsp; 📞 <span class="ph">${esc(r.phone2)}</span></div>
-          <div>💳 حوّل من: <span class="ph">${esc(r.payFrom||'-')}</span></div>
-          ${(r.passengers||[]).map((p,i) => `<div>🎟️ كرسي ${i+2}: <b>${esc(p.name)}</b> — <span class="ph">${esc(p.phone)}</span></div>`).join('')}
+          <h3>${esc(r.name)} <span style="font-size:13px;background:#e8f4fd;color:#0b3d6b;border-radius:20px;padding:2px 10px;font-weight:700">🎟️ ${seatsOf(r)} ${seatsOf(r)===1?'كرسي':'كراسي'}</span>${r.manual ? '<span class="tag manual">✍️ يدوي</span>' : ''}</h3>
+          <div>${r.phone1 ? `📞 <span class="ph">${esc(r.phone1)}</span>` : '📞 —'}${r.phone2 ? ` &nbsp; 📞 <span class="ph">${esc(r.phone2)}</span>` : ''}</div>
+          ${r.manual ? '' : `<div>💳 حوّل من: <span class="ph">${esc(r.payFrom||'-')}</span></div>`}
+          ${(r.passengers||[]).map((p,i) => `<div>🎟️ كرسي ${i+2}: <b>${esc(p.name) || '—'}</b>${p.phone ? ` — <span class="ph">${esc(p.phone)}</span>` : ''}</div>`).join('')}
           <div>🕒 ${r.createdAt ? r.createdAt.toDate().toLocaleString('ar-EG') : ''}</div>
+          <textarea class="note-ta" data-note="${r.id}" placeholder="📝 ملاحظات (بتتحفظ تلقائي)">${esc(r.notes||'')}</textarea><span class="saved" id="sv-${r.id}"></span>
           <div class="acts">
             <button class="${r.confirmed?'gray':'green'}" data-ok="${r.id}">${r.confirmed?'إلغاء التأكيد':'تأكيد الدفع ✓'}</button>
-            <a href="https://wa.me/2${esc(r.phone1)}?text=${encodeURIComponent('أهلاً ' + (r.name||'') + '، معاك فريق رحلة الإسكندرية 🌊 استلمنا تسجيلك وبنراجع التحويل.')}" target="_blank" rel="noopener"><button class="green" type="button">واتساب 💬</button></a>
+            ${r.phone1 ? `<a href="https://wa.me/2${esc(r.phone1)}?text=${encodeURIComponent('أهلاً ' + (r.name||'') + '، معاك فريق رحلة الإسكندرية 🌊 استلمنا تسجيلك وبنراجع التحويل.')}" target="_blank" rel="noopener"><button class="green" type="button">واتساب 💬</button></a>` : ''}
             <button class="red" data-del="${r.id}">حذف</button>
           </div>
         </div>
@@ -153,6 +191,90 @@
     }
   };
 
+  // حفظ الملاحظات تلقائي عند الخروج من الخانة
+  $('list').addEventListener('change', async e => {
+    const t = e.target, id = t.dataset && t.dataset.note;
+    if (!id) return;
+    const r = data.find(x => x.id === id);
+    const val = t.value.trim();
+    if (!r || val === (r.notes || '')) return;
+    const sv = $('sv-' + id);
+    try {
+      await db.collection('trip_registrations').doc(id).update({notes: val});
+      if (sv) { sv.textContent = 'تم الحفظ ✓'; setTimeout(() => { sv.textContent = ''; }, 2000); }
+    } catch (err) { alert('تعذر حفظ الملاحظة. تأكد من الاتصال والصلاحيات.'); }
+  });
+  $('list').addEventListener('focusout', e => {
+    if (e.target.classList && e.target.classList.contains('note-ta') && pendingList) setTimeout(render, 250);
+  });
+
+  // ===== إضافة شخص يدويًا =====
+  const toEn = s => String(s||'').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g,'');
+  const phoneRe = /^01[0125][0-9]{8}$/;
+  let apax = [];
+  function renderAPax(){
+    const n = Math.min(20, Math.max(1, parseInt($('a_seats').value, 10) || 1)) - 1;
+    while (apax.length < n) apax.push({name:'', phone:''});
+    apax.length = n;
+    const box = $('a_pax');
+    box.innerHTML = '';
+    apax.forEach((p, i) => {
+      const d = document.createElement('div');
+      d.className = 'apax';
+      d.innerHTML = '<b>🎟️ الكرسي ' + (i + 2) + '</b>' +
+        '<input data-i="' + i + '" data-f="name" placeholder="الاسم" style="margin-top:6px">' +
+        '<input data-i="' + i + '" data-f="phone" type="tel" inputmode="numeric" maxlength="11" placeholder="التليفون (اختياري)" style="direction:ltr;text-align:right;margin-bottom:0">';
+      box.appendChild(d);
+      d.querySelector('[data-f=name]').value = p.name;
+      d.querySelector('[data-f=phone]').value = p.phone;
+    });
+  }
+  $('a_pax').addEventListener('input', e => {
+    const t = e.target; if (t.dataset && t.dataset.i !== undefined) apax[+t.dataset.i][t.dataset.f] = t.value;
+  });
+  $('a_seats').oninput = renderAPax;
+  $('addBtn').onclick = () => {
+    ['a_name','a_phone','a_notes'].forEach(id => $(id).value = '');
+    $('a_seats').value = 1; $('a_ok').checked = true; $('a_err').textContent = ''; apax = []; renderAPax();
+    $('addModal').style.display = 'flex'; $('a_name').focus();
+  };
+  $('a_cancel').onclick = () => $('addModal').style.display = 'none';
+  $('a_save').onclick = async () => {
+    const err = m => { $('a_err').textContent = m; };
+    err('');
+    const name = $('a_name').value.trim().replace(/\s+/g,' ');
+    const phone = toEn($('a_phone').value);
+    const n = parseInt($('a_seats').value, 10);
+    if (name.length < 2) return err('اكتب الاسم');
+    if (phone && !phoneRe.test(phone)) return err('رقم التليفون غير صحيح (11 رقم ويبدأ بـ 01) أو سيبه فاضي');
+    if (!Number.isInteger(n) || n < 1 || n > 20) return err('عدد الكراسي من 1 لـ 20');
+    const passengers = [];
+    for (let i = 0; i < n - 1; i++) {
+      const pn = (apax[i].name || '').trim(), pp = toEn(apax[i].phone || '');
+      if (pp && !phoneRe.test(pp)) return err('رقم تليفون الكرسي ' + (i + 2) + ' غير صحيح');
+      passengers.push({name: pn, phone: pp});
+    }
+    const id = phone || ('manual-' + Date.now());
+    if (phone && data.some(r => r.id === id)) return err('الرقم ده مسجل قبل كده');
+    if (counter && counter.limit != null && counter.count + n > counter.limit &&
+        !confirm('الكراسي المتبقية ' + Math.max(0, counter.limit - counter.count) + ' بس، والإضافة هتتجاوز الحد. تكمل؟')) return;
+    const btn = $('a_save'); btn.disabled = true;
+    try {
+      const b = db.batch();
+      b.set(db.collection('trip_registrations').doc(id), {
+        name, phone1: phone, phone2: '', payFrom: '', screenshot: '',
+        confirmed: $('a_ok').checked, seats: n, totalPrice: n * TRIP_PRICE,
+        ...(n > 1 ? {passengers} : {}),
+        notes: $('a_notes').value.trim(), manual: true,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      b.set(counterRef, {count: firebase.firestore.FieldValue.increment(n)}, {merge: true});
+      await b.commit();
+      $('addModal').style.display = 'none';
+    } catch (e) { err('تعذر الحفظ. تأكد إنك نشرت القواعد الجديدة في Firebase ثم جرّب تاني.'); }
+    btn.disabled = false;
+  };
+
   // ضبط الحد الأقصى (وإعادة مزامنة العداد مع عدد المسجلين الفعلي)
   $('limitBtn').onclick = async () => {
     const v = prompt('الحد الأقصى لعدد المسجلين:', counter ? counter.limit : 51);
@@ -164,8 +286,8 @@
   $('modal').onclick = () => $('modal').style.display = 'none';
 
   $('csvBtn').onclick = () => {
-    const head = ['الاسم','عدد الكراسي','باقي الركاب','تليفون 1','تليفون 2','حوّل من','تم التأكيد','وقت التسجيل'];
-    const lines = data.map(r => [r.name, Math.max(1, parseInt(r.seats, 10) || 1), (r.passengers||[]).map(p => p.name + ' (' + p.phone + ')').join(' | '), r.phone1, r.phone2, r.payFrom||'', r.confirmed?'نعم':'لا', r.createdAt?r.createdAt.toDate().toLocaleString('ar-EG'):'']
+    const head = ['الاسم','عدد الكراسي','باقي الركاب','تليفون 1','تليفون 2','حوّل من','تم التأكيد','وقت التسجيل','ملاحظات','يدوي'];
+    const lines = data.map(r => [r.name, Math.max(1, parseInt(r.seats, 10) || 1), (r.passengers||[]).map(p => p.name + ' (' + p.phone + ')').join(' | '), r.phone1, r.phone2, r.payFrom||'', r.confirmed?'نعم':'لا', r.createdAt?r.createdAt.toDate().toLocaleString('ar-EG'):'', r.notes||'', r.manual?'نعم':'']
       .map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
     const blob = new Blob(['\ufeff' + [head.join(','), ...lines].join('\n')], {type:'text/csv;charset=utf-8'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'alex-trip.csv'; a.click();
