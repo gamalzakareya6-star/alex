@@ -1,0 +1,143 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'admin@alex-trip.com';
+    }
+
+    // عدد الكراسي في الحجز (لو الحقل مش موجود يتحسب كرسي واحد)
+    function seatsOf(d) {
+      return 'seats' in d ? d.seats : 1;
+    }
+
+    // الحد الأقصى للكراسي في الحجز الواحد (لازم يطابق MAX_SEATS_PER_BOOKING في index.html)
+    function maxSeats() {
+      return 5;
+    }
+
+    // =========================
+    // عداد المقاعد
+    // =========================
+    match /meta/counter {
+
+      // القراءة للأدمن فقط
+      allow read: if isAdmin();
+
+      // الإنشاء والحذف للأدمن
+      allow create, delete: if isAdmin();
+
+      // الزائر يستطيع فقط زيادة العدد أثناء التسجيل (بعدد كراسي حجزه)
+      allow update: if isAdmin() || (
+        request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['count', 'lastPhone'])
+
+        && request.resource.data.lastPhone is string
+
+        // الحجز لازم يتسجل في نفس الـ Batch
+        && existsAfter(
+          /databases/$(database)/documents/trip_registrations/$(request.resource.data.lastPhone)
+        )
+
+        // الزيادة = عدد كراسي الحجز بالظبط
+        && request.resource.data.count
+          == resource.data.count + seatsOf(
+            getAfter(
+              /databases/$(database)/documents/trip_registrations/$(request.resource.data.lastPhone)
+            ).data
+          )
+
+        // ما يعدّيش الليمت
+        && request.resource.data.count
+          <= resource.data.limit
+      );
+    }
+
+
+    // =========================
+    // بيانات المسجلين
+    // =========================
+    match /trip_registrations/{id} {
+
+      allow create: if
+
+        // رقم الهاتف هو Document ID
+        id.matches('^01[0125][0-9]{8}$')
+
+        // الحقول المسموح بها فقط
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'phone1',
+          'phone2',
+          'payFrom',
+          'screenshot',
+          'confirmed',
+          'createdAt',
+          'seats',
+          'totalPrice'
+        ])
+
+        // الرقم الأول يساوي ID
+        && request.resource.data.phone1 == id
+
+        // التحقق من الاسم
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 5
+        && request.resource.data.name.size() <= 100
+
+        // رقم الهاتف الثاني
+        && request.resource.data.phone2 is string
+        && request.resource.data.phone2.matches('^01[0125][0-9]{8}$')
+
+        // رقم التحويل
+        && request.resource.data.payFrom is string
+        && request.resource.data.payFrom.matches('^01[0125][0-9]{8}$')
+
+        // صورة التحويل
+        && request.resource.data.screenshot is string
+        && request.resource.data.screenshot.size() < 950000
+
+        // لا يمكن للمستخدم تأكيد الدفع بنفسه
+        && request.resource.data.confirmed == false
+
+        // عدد الكراسي: رقم صحيح من 1 للحد الأقصى
+        && seatsOf(request.resource.data) is int
+        && seatsOf(request.resource.data) >= 1
+        && seatsOf(request.resource.data) <= maxSeats()
+
+        // السعر الإجمالي (لو مبعوت) لازم يساوي عدد الكراسي × 350
+        && (
+          !('totalPrice' in request.resource.data)
+          || request.resource.data.totalPrice == seatsOf(request.resource.data) * 350
+        )
+
+        // الكراسي المتبقية تكفي الحجز
+        && get(
+          /databases/$(database)/documents/meta/counter
+        ).data.count + seatsOf(request.resource.data)
+          <= get(
+            /databases/$(database)/documents/meta/counter
+          ).data.limit
+
+        // التأكد من زيادة العداد بعدد الكراسي في نفس العملية
+        && getAfter(
+          /databases/$(database)/documents/meta/counter
+        ).data.count
+          == get(
+            /databases/$(database)/documents/meta/counter
+          ).data.count + seatsOf(request.resource.data)
+
+        // التأكد أن الرقم المسجل هو نفسه
+        && getAfter(
+          /databases/$(database)/documents/meta/counter
+        ).data.lastPhone == id;
+
+
+      // الأدمن فقط يستطيع رؤية أو تعديل البيانات
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}
