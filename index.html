@@ -3,30 +3,478 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a2e57">
-<title>متوقف مؤقتًا</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<title>رحلة الإسكندرية</title>
+<script>document.documentElement.classList.add('js')</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
+  :root{
+    --navy:#0a2e57; --navy-deep:#061d38; --blue:#1479c9; --sky:#e8f4fd; --sand:#fff8ec;
+    --gold:#d9a94a; --gold-soft:#f4dfb0;
+    --red:#d90429; --red-bg:#fff0f2; --green:#12a150; --ink:#13293d; --muted:#5b6f82;
+    --ease:cubic-bezier(.22,.7,.2,1);
+    --shadow-sm:0 2px 6px rgba(10,46,87,.06),0 8px 22px rgba(10,46,87,.08);
+    --shadow-md:0 4px 10px rgba(10,46,87,.07),0 18px 44px rgba(10,46,87,.14);
+  }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{min-height:100vh;display:grid;place-items:center;padding:24px;font-family:'Cairo',sans-serif;color:#fff;text-align:center;
-    background:linear-gradient(125deg,#061d38,#0a2e57 40%,#1479c9);background-size:200% 200%;animation:shift 12s ease-in-out infinite alternate}
-  .card{max-width:420px;padding:36px 26px;border-radius:26px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);
-    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 20px 50px rgba(0,0,0,.25);animation:up .8s cubic-bezier(.22,.7,.2,1) both}
-  .ico{font-size:54px;display:inline-block;animation:float 3.5s ease-in-out infinite}
-  h1{font-size:26px;font-weight:900;margin:10px 0 8px}
-  p{opacity:.92;line-height:1.8}
-  @keyframes shift{to{background-position:100% 50%}}
-  @keyframes up{from{opacity:0;transform:translateY(20px)}}
-  @keyframes float{50%{transform:translateY(-8px)}}
-  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  html{scroll-behavior:smooth}
+  body{font-family:'Cairo',sans-serif;background:linear-gradient(180deg,var(--sky) 0%,#fff 45%);color:var(--ink);line-height:1.7;min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+  /* ===== Hero ===== */
+  .hero{position:relative;overflow:hidden;isolation:isolate;color:#fff;text-align:center;padding:44px 18px 84px;border-radius:0 0 40px 40px;
+    background:linear-gradient(125deg,var(--navy-deep),var(--navy) 35%,var(--blue) 75%,#2a95e0);background-size:220% 220%;
+    animation:heroShift 14s ease-in-out infinite alternate;box-shadow:0 20px 50px rgba(10,46,87,.28)}
+  .hero::before{content:"";position:absolute;inset:0;z-index:-1;
+    background:radial-gradient(60% 50% at 80% 0%,rgba(255,255,255,.18),transparent 70%),radial-gradient(45% 40% at 10% 100%,rgba(217,169,74,.2),transparent 70%)}
+  .orb{position:absolute;border-radius:50%;filter:blur(2px);z-index:-1;opacity:.55;animation:floaty 9s ease-in-out infinite}
+  .orb.o1{width:150px;height:150px;top:-40px;left:-30px;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.45),rgba(255,255,255,0) 70%)}
+  .orb.o2{width:110px;height:110px;top:40%;right:-30px;background:radial-gradient(circle at 30% 30%,rgba(217,169,74,.55),rgba(217,169,74,0) 70%);animation-duration:11s;animation-delay:-3s}
+  .orb.o3{width:70px;height:70px;bottom:70px;left:18%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.4),rgba(255,255,255,0) 70%);animation-duration:7s;animation-delay:-5s}
+  .wave{position:absolute;left:0;right:0;bottom:-1px;height:44px;background-repeat:repeat-x;background-size:600px 44px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 44' preserveAspectRatio='none'%3E%3Cpath d='M0 22 Q150 0 300 22 T600 22 V44 H0 Z' fill='%23e8f4fd'/%3E%3C/svg%3E")}
+  .wave.w1{opacity:.45;animation:waveMove 14s linear infinite;bottom:6px}
+  .wave.w2{animation:waveMove 9s linear infinite reverse}
+  .hero h1{font-size:32px;font-weight:900;letter-spacing:.2px;text-shadow:0 4px 24px rgba(0,0,0,.25)}
+  .hero p{opacity:.92;margin-top:6px}
+  .price{position:relative;overflow:hidden;display:inline-block;margin-top:18px;color:var(--navy-deep);font-weight:900;font-size:22px;padding:8px 30px;border-radius:40px;
+    background:linear-gradient(135deg,#fff,var(--gold-soft) 55%,var(--gold));box-shadow:0 8px 24px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.8)}
+  .price::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;transform:skewX(-20deg);
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:shine 4.5s ease-in-out infinite 1.2s}
+  .included{margin:14px auto 0;font-size:15px;font-weight:700;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.32);border-radius:14px;padding:9px 14px;max-width:440px;
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+
+  /* ===== Layout / Cards ===== */
+  main{position:relative;z-index:2;max-width:560px;margin:-40px auto 40px;padding:0 14px}
+  .card{background:#fff;border-radius:22px;padding:22px;margin-bottom:18px;border:1px solid rgba(20,121,201,.08);box-shadow:var(--shadow-sm);
+    transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
+  .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+  .card h2{position:relative;font-size:19px;color:var(--navy);margin-bottom:14px;font-weight:800;padding-bottom:10px}
+  .card h2::after{content:"";position:absolute;right:0;bottom:0;width:38px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--blue));transition:width .6s var(--ease)}
+  .card:hover h2::after{width:70px}
+
+  /* ===== Timeline ===== */
+  .timeline{list-style:none}
+  .timeline li{display:flex;gap:14px;align-items:center;padding:12px 0;border-bottom:1px dashed #d8e4ee}
+  .timeline li:last-child{border:0}
+  .timeline .ico{flex:none;width:44px;height:44px;display:grid;place-items:center;font-size:21px;border-radius:14px;
+    background:linear-gradient(145deg,#fff,var(--sky));box-shadow:0 4px 12px rgba(20,121,201,.16),inset 0 0 0 1px rgba(20,121,201,.1);
+    transition:transform .4s var(--ease)}
+  .timeline li:hover .ico{transform:scale(1.1) rotate(-6deg)}
+  .timeline b{display:block;font-weight:700}
+  .timeline span{color:var(--muted);font-size:14px}
+  .timeline .ico{color:inherit;font-size:21px}
+
+  .alert{background:var(--red-bg);border:2px solid var(--red);color:var(--red);border-radius:16px;padding:14px 16px;font-weight:900;font-size:18px;text-align:center;animation:glow 2.8s ease-in-out infinite}
+  .alert small{display:block;font-weight:600;font-size:14px;margin-top:2px}
+  .notes{margin-top:12px;padding-right:20px;color:var(--muted);font-size:14.5px}
+
+  /* ===== Payment ===== */
+  .pay{background:linear-gradient(160deg,var(--sand),#fff 80%);border:1px solid #f0dcb0}
+  .paynum{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border-radius:16px;padding:11px 14px;margin:12px 0;border:1px solid #eadfc7;box-shadow:0 4px 14px rgba(217,169,74,.12)}
+  .paynum strong{font-size:22px;letter-spacing:1px;direction:ltr;color:var(--navy)}
+  button{font-family:inherit;cursor:pointer}
+  .copy{background:linear-gradient(135deg,var(--blue),var(--navy));color:#fff;border:0;border-radius:11px;padding:9px 18px;font-weight:700;box-shadow:0 4px 12px rgba(20,121,201,.3);
+    transition:transform .25s var(--ease),box-shadow .25s var(--ease),background .3s}
+  .copy:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(20,121,201,.38)}
+  .copy:active{transform:scale(.96)}
+  .copy.done{background:var(--green);box-shadow:0 4px 12px rgba(18,161,80,.35)}
+
+  /* ===== Form ===== */
+  label{display:block;font-weight:600;margin:16px 0 6px}
+  input[type=text],input[type=tel]{width:100%;font-family:inherit;font-size:16px;padding:13px 15px;border:1.5px solid #cfdbe6;border-radius:13px;background:#fbfdff;outline:none;
+    transition:border-color .25s,box-shadow .25s,background .25s,transform .25s var(--ease)}
+  input:hover{border-color:#a9c3da}
+  input:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 4px rgba(20,121,201,.14);transform:translateY(-1px)}
+  input[type=tel]{direction:ltr;text-align:right}
+  .file{border:2px dashed #9db9d1;border-radius:16px;padding:20px;text-align:center;color:var(--muted);cursor:pointer;background:#fbfdff;
+    transition:border-color .3s,background .3s,transform .3s var(--ease)}
+  .file:hover{border-color:var(--blue);background:var(--sky);transform:translateY(-2px)}
+  .file.has{border-style:solid;border-color:var(--green);background:#f3fbf6}
+  .file input{display:none}
+  #preview{max-width:100%;max-height:260px;border-radius:14px;margin-top:12px;display:none;box-shadow:var(--shadow-sm);animation:pop .5s var(--ease)}
+  .err{color:var(--red);font-size:13.5px;margin-top:4px;min-height:0}
+  .err:not(:empty){animation:shake .4s}
+  .submit{position:relative;overflow:hidden;width:100%;margin-top:22px;background:linear-gradient(135deg,var(--blue),var(--navy));color:#fff;border:0;border-radius:16px;padding:15px;font-size:18px;font-weight:700;
+    box-shadow:0 10px 26px rgba(20,121,201,.35);transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+  .submit::after{content:"";position:absolute;top:0;bottom:0;width:35%;left:-60%;transform:skewX(-20deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent)}
+  .submit:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(20,121,201,.45)}
+  .submit:hover::after{left:130%;transition:left .8s var(--ease)}
+  .submit:active{transform:scale(.98)}
+  .submit:disabled{opacity:.6;transform:none;box-shadow:none;cursor:wait}
+
+  /* ===== Seats ===== */
+  .seats{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--sky);border:1px solid rgba(20,121,201,.18);border-radius:16px;padding:12px 14px}
+  .stepper{display:flex;align-items:center;gap:6px;direction:ltr}
+  .stepper button{width:40px;height:40px;border:0;border-radius:12px;font-size:22px;font-weight:900;line-height:1;color:#fff;background:linear-gradient(135deg,var(--blue),var(--navy));box-shadow:0 4px 12px rgba(20,121,201,.3);transition:transform .2s var(--ease),opacity .2s}
+  .stepper button:active{transform:scale(.92)}
+  .stepper button:disabled{opacity:.35;box-shadow:none;cursor:not-allowed}
+  .stepper output{min-width:38px;text-align:center;font-size:24px;font-weight:900;color:var(--navy)}
+  .seat-total{margin-top:10px;text-align:center;font-weight:700;color:var(--navy);background:#fff;border:1px dashed var(--gold);border-radius:14px;padding:9px 12px}
+  .seat-total b{color:var(--red);font-size:19px}
+  .seat-note{font-size:13px;color:var(--muted);margin-top:6px}
+  .bump{animation:pop .3s var(--ease)}
+  .pax{background:#fbfdff;border:1.5px solid #dbe7f1;border-radius:16px;padding:6px 14px 14px;margin-top:12px;animation:pop .4s var(--ease)}
+  .pax h3{font-size:16px;color:var(--navy);margin-top:10px;font-weight:800}
+  .pax label{margin:10px 0 5px;font-size:14.5px}
+  .pax-head{margin-top:20px;font-weight:700;color:var(--navy)}
+
+  /* ===== Success ===== */
+  .success{display:none;text-align:center;animation:pop .7s var(--ease)}
+  .success .big{font-size:60px;display:inline-block;animation:bounce 1.6s ease-in-out infinite}
+  .success h2{color:var(--green)}
+  .success h2::after{right:50%;margin-right:-19px}
+  .foot{text-align:center;color:var(--muted);font-size:14px;margin-top:8px}
+
+  /* ===== Entrance animations (only when JS is on) ===== */
+  .js .hero h1,.js .hero p,.js .hero .price,.js .hero .included{opacity:0;transform:translateY(18px);animation:fadeUp .9s var(--ease) forwards}
+  .js .hero h1{animation-delay:.1s}
+  .js .hero p{animation-delay:.25s}
+  .js .hero .price{animation-delay:.4s}
+  .js .hero .included{animation-delay:.55s}
+  .js .reveal{opacity:0;transform:translateY(28px);transition:opacity .8s var(--ease),transform .8s var(--ease),box-shadow .45s var(--ease)}
+  .js .reveal.in{opacity:1;transform:none}
+  .js .reveal.in:hover{transform:translateY(-3px)}
+  .js .timeline li{opacity:0;transform:translateX(18px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+  .js .reveal.in .timeline li{opacity:1;transform:none}
+  .js .reveal.in .timeline li:nth-child(1){transition-delay:.15s}
+  .js .reveal.in .timeline li:nth-child(2){transition-delay:.28s}
+  .js .reveal.in .timeline li:nth-child(3){transition-delay:.41s}
+  .js .reveal.in .timeline li:nth-child(4){transition-delay:.54s}
+  .js .reveal.in .timeline li:nth-child(5){transition-delay:.67s}
+
+  @keyframes heroShift{from{background-position:0% 50%}to{background-position:100% 50%}}
+  @keyframes floaty{0%,100%{transform:translateY(0) translateX(0)}50%{transform:translateY(-18px) translateX(10px)}}
+  @keyframes waveMove{from{background-position-x:0}to{background-position-x:600px}}
+  @keyframes shine{0%,55%{left:-60%}100%{left:140%}}
+  @keyframes fadeUp{to{opacity:1;transform:none}}
+  @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(217,4,41,.0)}50%{box-shadow:0 0 0 6px rgba(217,4,41,.12)}}
+  @keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+    .js .hero h1,.js .hero p,.js .hero .price,.js .hero .included,.js .reveal,.js .timeline li{opacity:1!important;transform:none!important}
+  }
 </style>
 </head>
 <body>
-  <main class="card">
-    <div class="ico">🌊</div>
-    <h1>الموقع متوقف مؤقتًا</h1>
-    <p>الحجز مقفول دلوقتي.<br>هنرجع قريب بإذن الله 💙</p>
-  </main>
+
+<header class="hero">
+  <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
+  <h1>🌊☀️ رحلة الإسكندرية ☀️🌊</h1>
+  <p>يوم مليان فسح ومرح في عروس البحر المتوسط 💙</p>
+  <div class="price">💰 <span id="priceNum">350</span> جنيه فقط</div>
+  <div class="included">✅ السعر شامل تذاكر دخول شاطئ البوريفاج وحدائق المنتزه</div>
+  <div class="wave w1"></div><div class="wave w2"></div>
+</header>
+
+<main>
+
+  <section class="card reveal">
+    <h2>📍 برنامج الرحلة</h2>
+    <ul class="timeline">
+      <li><span class="ico">🕡</span><div><b>6:30 صباحًا</b><span>التجمع عند نادي الغزل بشبين</span></div></li>
+      <li><span class="ico">🏖️</span><div><b>10:30 صباحًا – 12:30 ظهرًا</b><span>شاطئ البوريفاج</span></div></li>
+      <li><span class="ico">🌳</span><div><b>1:00 – 5:00 مساءً</b><span>حدائق المنتزه</span></div></li>
+      <li><span class="ico">🕌</span><div><b>5:00 – 6:00 مساءً</b><span>شارع النبي دانيال التاريخي (جامع النبي دانيال وسوق الكتب القديمة)</span></div></li>
+      <li><span class="ico">🛍️</span><div><b>6:00 – 8:00 مساءً</b><span>مول جرين بلازا</span></div></li>
+    </ul>
+    <div class="alert" style="margin-top:14px">
+      🔴 الوصول إلى شبين الكوم 11:30 مساءً
+      <small>عند نادي الغزل</small>
+    </div>
+    <ul class="notes">
+      <li>التجمع والعودة عند نادي الغزل بشبين.</li>
+      <li>الأتوبيس هيلتزم بمواعيد التحرك المحددة، ومش هيتم التأخير عن موعد التحرك.</li>
+    </ul>
+  </section>
+
+  <section class="card pay reveal">
+    <h2>💳 طريقة الدفع</h2>
+    <p>حوّل <b id="payTotal">350 جنيه</b> <span id="payNote" style="color:var(--muted);font-size:14px"></span> على الرقم ده (إنستا باي أو فودافون كاش) وبعدها ارفع سكرين التحويل:</p>
+    <div class="paynum">
+      <strong id="payNumber">01507146928</strong>
+      <button class="copy" id="copyBtn" type="button">نسخ</button>
+    </div>
+  </section>
+
+  <section class="card reveal" id="formCard">
+    <h2>📝 سجّل بياناتك</h2>
+    <form id="form" novalidate>
+      <label>عدد الكراسي المطلوب حجزها</label>
+      <div class="seats">
+        <div>
+          <div style="font-weight:700">🎟️ كراسي</div>
+          <div class="seat-note">الحد الأقصى <span id="maxSeatsTxt">5</span> كراسي في الحجز الواحد</div>
+        </div>
+        <div class="stepper">
+          <button type="button" id="seatMinus" aria-label="نقص">−</button>
+          <output id="seatCount" aria-live="polite">1</output>
+          <button type="button" id="seatPlus" aria-label="زيادة">+</button>
+        </div>
+      </div>
+      <div class="seat-total" id="seatTotal">عدد الكراسي: <b>1</b> × 350 = <b>350</b> جنيه</div>
+      <div class="err" id="e-seats"></div>
+
+      <label for="name">الاسم بالكامل (صاحب الحجز – كرسي 1)</label>
+      <input type="text" id="name" autocomplete="name" placeholder="مثال: محمد أحمد علي">
+      <div class="err" id="e-name"></div>
+
+      <label for="phone1">رقم التليفون (1) <span style="color:#12a150">💬 لازم يكون عليه واتساب</span></label>
+      <input type="tel" id="phone1" inputmode="numeric" maxlength="11" placeholder="01XXXXXXXXX">
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">هنتواصل معاك على الرقم ده بالواتساب.</div>
+      <div class="err" id="e-phone1"></div>
+
+      <label for="phone2">رقم تليفون تاني (2)</label>
+      <input type="tel" id="phone2" inputmode="numeric" maxlength="11" placeholder="01XXXXXXXXX">
+      <div class="err" id="e-phone2"></div>
+
+      <div id="paxBox"></div>
+
+      <label>سكرين الدفع</label>
+      <label class="file" id="fileBox" for="shot">
+        <span id="fileText">📷 اضغط هنا لاختيار صورة التحويل</span>
+        <input type="file" id="shot" accept="image/*">
+      </label>
+      <img id="preview" alt="معاينة سكرين الدفع">
+      <div class="err" id="e-shot"></div>
+
+      <label for="payfrom">الرقم اللي حوّلت منه</label>
+      <input type="tel" id="payfrom" inputmode="numeric" maxlength="11" placeholder="01XXXXXXXXX">
+      <div class="err" id="e-payfrom"></div>
+
+      <button class="submit" id="submitBtn" type="submit">تأكيد الحجز ✅</button>
+      <div class="err" id="e-form" style="text-align:center;margin-top:10px"></div>
+    </form>
+  </section>
+
+  <section class="card success" id="success">
+    <div class="big">🎉</div>
+    <h2>تم استلام بياناتك!</h2>
+    <div class="seat-total" id="successSeats" style="margin-top:12px"></div>
+    <p style="margin-top:8px">هيتم التواصل معاك قريبًا على الواتساب (الرقم الأول) بعد مراجعة التحويل.</p>
+    <p style="margin-top:4px;color:var(--muted);font-size:14px">من فضلك خلّي الواتساب متاح ومتتجاهلش الرسالة. 💙</p>
+    <div class="alert" style="margin-top:16px">🔴 الوصول إلى شبين الكوم 11:30 مساءً<small>عند نادي الغزل</small></div>
+    <p class="foot" style="margin-top:14px">مستنيينكم! 🌊</p>
+  </section>
+
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  // ====== ضع إعدادات Firebase بتاعتك هنا (نفس الموجودة في admin.html) ======
+  const firebaseConfig = {
+    apiKey: "AIzaSyDbpRDwimsvkCQ7wOqSdjtUzYbaOpR4R2o",
+    authDomain: "alex-c7727.firebaseapp.com",
+    projectId: "alex-c7727",
+    storageBucket: "alex-c7727.firebasestorage.app",
+    messagingSenderId: "607131907952",
+    appId: "1:607131907952:web:e3c7fed5ce567754dbc1b5",
+    measurementId: "G-FBTCGPWFJL"
+  };
+  // اسم قناة إشعارات الأدمن على ntfy (اختار اسم طويل وعشوائي وسري)
+  const NTFY_TOPIC = "alex-trip-k8x29qv7m3";
+  // =======================================================================
+
+  const configured = !firebaseConfig.apiKey.startsWith("YOUR");
+  let db = null;
+  if (configured) { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
+
+  const $ = id => document.getElementById(id);
+  const TRIP_PRICE = 350, MAX_SEATS_PER_BOOKING = 5;
+  let seats = 1;
+  const phoneRe = /^01[0125][0-9]{8}$/;
+  const toEn = s => s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g,'');
+
+  // اختيار عدد الكراسي
+  function renderSeats(){
+    $('seatCount').textContent = seats;
+    $('seatMinus').disabled = seats <= 1;
+    $('seatPlus').disabled = seats >= MAX_SEATS_PER_BOOKING;
+    const total = seats * TRIP_PRICE;
+    $('seatTotal').innerHTML = 'عدد الكراسي: <b>' + seats + '</b> × ' + TRIP_PRICE + ' = <b>' + total + '</b> جنيه';
+    $('payTotal').textContent = total + ' جنيه';
+    $('payNote').textContent = seats > 1 ? '(' + seats + ' كراسي)' : '';
+    renderPax();
+    $('seatTotal').classList.remove('bump'); void $('seatTotal').offsetWidth; $('seatTotal').classList.add('bump');
+  }
+  // بيانات باقي الركاب (الكرسي 2 وما بعده)
+  let pax = [];
+  function renderPax(){
+    const n = seats - 1;
+    while (pax.length < n) pax.push({name:'', phone:''});
+    pax.length = n;
+    const box = $('paxBox');
+    box.innerHTML = n > 0 ? '<div class="pax-head">🧑‍🤝‍🧑 بيانات باقي الركاب</div>' : '';
+    pax.forEach((p, i) => {
+      const d = document.createElement('div');
+      d.className = 'pax';
+      d.innerHTML = '<h3>🎟️ الكرسي ' + (i + 2) + '</h3>' +
+        '<label for="pn' + i + '">الاسم بالكامل</label>' +
+        '<input type="text" id="pn' + i + '" data-i="' + i + '" data-f="name" autocomplete="off" placeholder="اسم صاحب الكرسي">' +
+        '<label for="pp' + i + '">رقم التليفون</label>' +
+        '<input type="tel" id="pp' + i + '" data-i="' + i + '" data-f="phone" inputmode="numeric" maxlength="11" placeholder="01XXXXXXXXX">' +
+        '<div class="err pax-err" id="e-pax' + i + '"></div>';
+      box.appendChild(d);
+      d.querySelector('[data-f=name]').value = p.name;
+      d.querySelector('[data-f=phone]').value = p.phone;
+    });
+  }
+  $('paxBox').addEventListener('input', e => {
+    const t = e.target;
+    if (t.dataset && t.dataset.i !== undefined) pax[+t.dataset.i][t.dataset.f] = t.value;
+  });
+  $('maxSeatsTxt').textContent = MAX_SEATS_PER_BOOKING;
+  $('seatPlus').onclick = () => { if (seats < MAX_SEATS_PER_BOOKING) { seats++; renderSeats(); } };
+  $('seatMinus').onclick = () => { if (seats > 1) { seats--; renderSeats(); } };
+  renderSeats();
+
+  // نسخ رقم الدفع
+  $('copyBtn').onclick = async () => {
+    try { await navigator.clipboard.writeText($('payNumber').textContent); }
+    catch(e){ const r=document.createRange(); r.selectNode($('payNumber')); getSelection().removeAllRanges(); getSelection().addRange(r); document.execCommand('copy'); }
+    $('copyBtn').textContent = 'تم النسخ ✓'; $('copyBtn').classList.add('done');
+    setTimeout(()=>{ $('copyBtn').textContent='نسخ'; $('copyBtn').classList.remove('done'); }, 2000);
+  };
+
+  // ضغط الصورة قبل الرفع (عشان تتخزن في Firestore ببلاش)
+  let shotData = null;
+  $('shot').onchange = e => {
+    const f = e.target.files[0];
+    $('e-shot').textContent = '';
+    if (!f) return;
+    if (!f.type.startsWith('image/')) { $('e-shot').textContent = 'من فضلك اختار صورة فقط'; return; }
+    const img = new Image();
+    img.onload = () => {
+      const max = 1100, ratio = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * ratio); c.height = Math.round(img.height * ratio);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      let q = 0.7, out = c.toDataURL('image/jpeg', q);
+      while (out.length > 850000 && q > 0.3) { q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+      shotData = out;
+      $('preview').src = out; $('preview').style.display = 'block';
+      $('fileBox').classList.add('has'); $('fileText').textContent = '✅ تم اختيار الصورة (اضغط للتغيير)';
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => { $('e-shot').textContent = 'مقدرناش نقرأ الصورة، جرّب صورة تانية'; };
+    img.src = URL.createObjectURL(f);
+  };
+
+  // إشعار على موبايل الأدمن (عن طريق تطبيق ntfy). بنبعت الاسم بس، بدون أي أرقام.
+  function notifyAdmin(name){
+    if (NTFY_TOPIC.startsWith("YOUR")) return;
+    fetch('https://ntfy.sh/', {
+      method: 'POST',
+      body: JSON.stringify({
+        topic: NTFY_TOPIC,
+        title: '🌊 تسجيل جديد في رحلة الإسكندرية',
+        message: name + ' سجّل دلوقتي. افتح اللوحة لمراجعة الدفع.',
+        priority: 4,
+        tags: ['ocean'],
+        click: new URL('admin.html', location.href).href
+      })
+    }).catch(()=>{});
+  }
+
+  $('form').onsubmit = async e => {
+    e.preventDefault();
+    ['name','phone1','phone2','shot','payfrom','form','seats'].forEach(k => $('e-'+k).textContent = '');
+    const name = $('name').value.trim().replace(/\s+/g,' ');
+    const p1 = toEn($('phone1').value), p2 = toEn($('phone2').value), pf = toEn($('payfrom').value);
+    let bad = false;
+    const nSeats = seats;
+    if (!Number.isInteger(nSeats) || nSeats < 1 || nSeats > MAX_SEATS_PER_BOOKING) { $('e-seats').textContent = 'عدد الكراسي لازم يكون من 1 لـ ' + MAX_SEATS_PER_BOOKING; bad = true; }
+    const fail = (k,m) => { $('e-'+k).textContent = m; bad = true; };
+    if (name.split(' ').length < 2 || name.length < 5) fail('name','اكتب الاسم بالكامل (اسمين على الأقل)');
+    if (!phoneRe.test(p1)) fail('phone1','رقم غير صحيح (لازم 11 رقم ويبدأ بـ 01)');
+    if (!phoneRe.test(p2)) fail('phone2','رقم غير صحيح (لازم 11 رقم ويبدأ بـ 01)');
+    else if (p1 === p2) fail('phone2','لازم يكون رقم مختلف عن الأول');
+    if (!phoneRe.test(pf)) fail('payfrom','اكتب الرقم اللي حوّلت منه');
+    if (!shotData) fail('shot','ارفع سكرين الدفع');
+    document.querySelectorAll('.pax-err').forEach(x => x.textContent = '');
+    const cleanPax = [];
+    for (let i = 0; i < nSeats - 1; i++) {
+      const pn = (pax[i].name || '').trim().replace(/\s+/g,' '), pp = toEn(pax[i].phone || '');
+      if (pn.split(' ').length < 2 || pn.length < 5) { $('e-pax'+i).textContent = 'اكتب اسم صاحب الكرسي ' + (i+2) + ' بالكامل (اسمين على الأقل)'; bad = true; }
+      else if (!phoneRe.test(pp)) { $('e-pax'+i).textContent = 'رقم تليفون غير صحيح (لازم 11 رقم ويبدأ بـ 01)'; bad = true; }
+      cleanPax.push({name: pn, phone: pp});
+    }
+    if (bad) return;
+
+    if (!configured) { $('e-form').textContent = 'الموقع لسه متضبطش (إعدادات Firebase ناقصة).'; return; }
+
+    $('submitBtn').disabled = true; $('submitBtn').textContent = 'جاري الإرسال...';
+    try {
+      // التسجيل + زيادة العداد في عملية واحدة؛ القواعد بترفض لو العدد اكتمل
+      const batch = db.batch();
+      batch.set(db.collection('trip_registrations').doc(p1), {
+        name, phone1: p1, phone2: p2, payFrom: pf, screenshot: shotData,
+        seats: nSeats, totalPrice: nSeats * TRIP_PRICE,
+        ...(nSeats > 1 ? { passengers: cleanPax } : {}),
+        confirmed: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      batch.update(db.collection('meta').doc('counter'), {
+        count: firebase.firestore.FieldValue.increment(nSeats),
+        lastPhone: p1
+      });
+      await batch.commit();
+      notifyAdmin(name);
+      $('successSeats').innerHTML = 'عدد الكراسي المحجوزة: <b>' + nSeats + '</b> — الإجمالي: <b>' + (nSeats * TRIP_PRICE) + '</b> جنيه';
+      $('formCard').style.display = 'none';
+      $('success').style.display = 'block';
+      scrollTo({top: $('success').offsetTop - 20, behavior:'smooth'});
+    } catch (err) {
+      console.error(err);
+      $('e-form').textContent = (err.code === 'permission-denied')
+        ? 'مقدرناش نسجّلك: يا إما الرقم ده مسجل قبل كده، يا إما الكراسي المتبقية أقل من العدد اللي اخترته أو باب الحجز اتقفل. جرّب تقلل عدد الكراسي أو تواصل معانا.'
+        : 'حصلت مشكلة في الإرسال، جرّب تاني.';
+      $('submitBtn').disabled = false; $('submitBtn').textContent = 'تأكيد الحجز ✅';
+    }
+  };
+</script>
+
+<script>
+  // ===== حركات الواجهة (لا تؤثر على منطق الحجز) =====
+  (function(){
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var items = document.querySelectorAll('.reveal');
+    if (reduce || !('IntersectionObserver' in window)) {
+      items.forEach(function(el){ el.classList.add('in'); });
+    } else {
+      // اللي ظاهر في الشاشة من البداية يتعرض فورًا (احتياط لو الـ observer اتأخر)
+      items.forEach(function(el){
+        var r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight * 0.92) { setTimeout(function(){ el.classList.add('in'); }, 120); }
+      });
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      items.forEach(function(el){ io.observe(el); });
+    }
+
+    // عدّاد السعر
+    var num = document.getElementById('priceNum');
+    if (num && !reduce) {
+      var target = parseInt(num.textContent, 10) || 0, start = null, dur = 1100;
+      num.textContent = '0';
+      var tick = function(t){
+        if (start === null) start = t;
+        var p = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - p, 3);
+        num.textContent = Math.round(target * e);
+        if (p < 1) requestAnimationFrame(tick); else num.textContent = target;
+      };
+      setTimeout(function(){ requestAnimationFrame(tick); }, 500);
+      setTimeout(function(){ num.textContent = target; }, dur + 900);
+    }
+  })();
+</script>
 </body>
 </html>
