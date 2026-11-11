@@ -42,6 +42,17 @@
     background:linear-gradient(135deg,#fff,var(--gold-soft) 55%,var(--gold));box-shadow:0 8px 24px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.8)}
   .price::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;transform:skewX(-20deg);
     background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:shine 4.5s ease-in-out infinite 1.2s}
+  .date{display:inline-block;margin-top:14px;font-size:16px;padding:6px 18px;border-radius:30px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .date b{font-weight:900;color:var(--gold-soft)}
+  .cta{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:13px 34px;border-radius:40px;text-decoration:none;
+    font-family:inherit;font-size:19px;font-weight:900;color:var(--navy-deep);background:linear-gradient(135deg,#fff,var(--gold-soft) 55%,var(--gold));
+    box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.85);transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+  .cta:hover{transform:translateY(-3px);box-shadow:0 16px 36px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.85)}
+  .cta:active{transform:scale(.97)}
+  .cta .arrow{display:inline-block;animation:nudge 1.4s ease-in-out infinite}
+  .cta::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;transform:skewX(-20deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:shine 4.5s ease-in-out infinite 2s}
+  #formCard{scroll-margin-top:16px}
   .included{margin:14px auto 0;font-size:15px;font-weight:700;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.32);border-radius:14px;padding:9px 14px;max-width:440px;
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 
@@ -128,11 +139,13 @@
   .foot{text-align:center;color:var(--muted);font-size:14px;margin-top:8px}
 
   /* ===== Entrance animations (only when JS is on) ===== */
-  .js .hero h1,.js .hero p,.js .hero .price,.js .hero .included{opacity:0;transform:translateY(18px);animation:fadeUp .9s var(--ease) forwards}
+  .js .hero h1,.js .hero p,.js .hero .date,.js .hero .price,.js .hero .included,.js .hero .cta{opacity:0;transform:translateY(18px);animation:fadeUp .9s var(--ease) forwards}
   .js .hero h1{animation-delay:.1s}
   .js .hero p{animation-delay:.25s}
-  .js .hero .price{animation-delay:.4s}
-  .js .hero .included{animation-delay:.55s}
+  .js .hero .date{animation-delay:.35s}
+  .js .hero .price{animation-delay:.45s}
+  .js .hero .included{animation-delay:.6s}
+  .js .hero .cta{animation-delay:.75s}
   .js .reveal{opacity:0;transform:translateY(28px);transition:opacity .8s var(--ease),transform .8s var(--ease),box-shadow .45s var(--ease)}
   .js .reveal.in{opacity:1;transform:none}
   .js .reveal.in:hover{transform:translateY(-3px)}
@@ -147,6 +160,7 @@
   @keyframes heroShift{from{background-position:0% 50%}to{background-position:100% 50%}}
   @keyframes floaty{0%,100%{transform:translateY(0) translateX(0)}50%{transform:translateY(-18px) translateX(10px)}}
   @keyframes waveMove{from{background-position-x:0}to{background-position-x:600px}}
+  @keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
   @keyframes shine{0%,55%{left:-60%}100%{left:140%}}
   @keyframes fadeUp{to{opacity:1;transform:none}}
   @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(217,4,41,.0)}50%{box-shadow:0 0 0 6px rgba(217,4,41,.12)}}
@@ -156,7 +170,7 @@
 
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
-    .js .hero h1,.js .hero p,.js .hero .price,.js .hero .included,.js .reveal,.js .timeline li{opacity:1!important;transform:none!important}
+    .js .hero h1,.js .hero p,.js .hero .date,.js .hero .price,.js .hero .included,.js .hero .cta,.js .reveal,.js .timeline li{opacity:1!important;transform:none!important}
   }
 </style>
 </head>
@@ -166,8 +180,10 @@
   <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
   <h1>🌊☀️ رحلة الإسكندرية ☀️🌊</h1>
   <p>يوم مليان فسح ومرح في عروس البحر المتوسط 💙</p>
+  <div class="date">📅 يوم الرحلة: <b>الثلاثاء 24 نوفمبر 2026</b></div>
   <div class="price">💰 <span id="priceNum">350</span> جنيه فقط</div>
   <div class="included">✅ السعر شامل تذاكر دخول شاطئ البوريفاج وحدائق المنتزه</div>
+  <a href="#formCard" class="cta" id="ctaBtn">سجّل دلوقتي <span class="arrow">👇</span></a>
   <div class="wave w1"></div><div class="wave w2"></div>
 </header>
 
@@ -459,6 +475,17 @@
       }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
       items.forEach(function(el){ io.observe(el); });
     }
+
+    // زر التسجيل: ينزل لفورم التسجيل في آخر الصفحة
+    var cta = document.getElementById('ctaBtn');
+    if (cta) cta.addEventListener('click', function(e){
+      var target = document.getElementById('formCard');
+      if (!target) return;
+      e.preventDefault();
+      target.style.transition = 'none'; target.classList.add('in'); void target.offsetHeight; // يثبّت مكان الفورم قبل النزول
+      setTimeout(function(){ target.style.transition = ''; }, 100);
+      target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    });
 
     // عدّاد السعر
     var num = document.getElementById('priceNum');
